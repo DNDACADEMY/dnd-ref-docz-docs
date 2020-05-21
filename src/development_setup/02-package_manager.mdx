@@ -1,0 +1,50 @@
+---
+name: Package Manager
+menu: Development Setup
+route: /development-setup/package-manager
+---
+
+## Overview
+
+---
+
+맥과 리눅스, 그리고 거의 모든 언어에서는 팩키지 매니저를 지원해줍니다 (맥: homebrew, 우분투 리눅스: apt, CentOS: yum, 파이썬: pip, nodejs: npm등).
+
+팩키지 매니저를 사용한다면, 프로그램/라이브러리를 설치할 때마다 직접 다운받아서 더블클릭을 통해 설치할 필요가 없습니다. 명령행에서 1줄 명령이면 원하는 프로그램/라이브러리가 자동으로 다운받아지고 설치됩니다.
+
+---
+
+## Chocolatey Install
+
+공식문서는 https://chocolatey.org/install 입니다. 관리자 권한의 파워쉘에서 다음 명령을 수행해주세요. 네트워크 상황에 따라 프록시 설정이 필요할 수 있습니다.
+Set-ExecutionPolicy Bypass -Scope Process -Force;
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072;
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+아래와 같이 여러 팩키지를 한 꺼번에 설치할 수 있습니다. 모두 복사해서 관리자 권한의 파워쉘에 붙여넣어 한 번에 설치해주세요.
+
+```bash
+# 파이썬과 노드JS
+choco install -y anaconda3 --params '"/AddToPath"'
+choco install -y nodejs
+
+# git
+choco install -y git.install --params "/GitAndUnixToolsOnPath /NoGitLfs /SChannel /NoAutoCrlf"
+
+# 에디터 그리고 코딩폰트
+choco install -y vscode d2codingfont jetbrainsmono
+
+# 도커
+choco install -y docker-desktop
+
+# 브라우저
+choco install -y googlechrome firefox
+```
+
+모두 설치하셨다면, 다음 과정을 진행하시면 됩니다.
+
+1. Visual Studio Code에서의 Proxy 설정
+2. Docker를 위한 WSL v2 설치하기
+3. Docker Desktop에서의 Proxy 설정
+
+모두 설치하셨더라도, 개발환경에 대한 이해도를 높이기 위해 다음 내용들은 꼭 살펴보시기를 권해드립니다.

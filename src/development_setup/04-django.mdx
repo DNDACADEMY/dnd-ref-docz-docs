@@ -1,0 +1,76 @@
+---
+name: Django
+menu: Development Setup
+route: /development-setup/django
+---
+
+## Window Python Overview
+
+1. 파이썬 공식 사이트 python.org 에서 배포하는 Python
+
+- 파이썬 공식으로서 널리 사용되는 배포판입니다. 실제 개발에서는 Anaconda Python 배포판이 기능도 많고 훨씬 편리합니다.
+
+2. Microsoft Store에서 배포하는 Python
+
+- 윈도우 기본에서는 명령프롬프트에서 python 명령을 입력했을 때 python이 설치되어있지 않으면 Microsoft Store앱의 Python 설치화면을 띄워줍니다. 이 배포판도 파이썬 공식 배포판도 유사합니다. 하지만 개발용으로는 Anaconda Python을 추천드립니다.
+
+3. (추천) Anaconda Python
+
+- Anaconda Inc에서 팩키징한 배포판으로서 개발 편의성을 높여주는 다양한 기능을 제공해줍니다.
+
+---
+
+## Chocolatey를 통한 Anaconda Python 설치
+
+관리자 권한이 있는 명령행에서 다음 명령으로 설치해주세요. 설치 옵션으로 환경변수 PATH에 추가하는 옵션을 필히 지정하셔야 합니다. Anaconda Python을 직접 다운로드/설치하는 경우에도 디폴트 옵션으로 설치하지마시고 필히 “환경변수 PATH에 추가”
+
+```bash
+choco install -y anaconda3 --params '"/AddToPath"'
+```
+
+---
+
+## Conda 환경
+
+파이썬 개발환경에서 여러 프로젝트를 동시에 개발할 때 가상환경이 꼭 필요합니다. 하나의 프로젝트만 한다면 가상환경을 굳이 사용하지 않아도 됩니다.
+파이썬의 가상환경은 라이브러리를 격리해서 설치할 수 있는 Feature입니다. 파이썬2에서는 virtualenv 라이브러리를 설치하여 사용할 수 있었으며, 파이썬3에서는 venv 이름으로 기본지원됩니다. Virtualenv/venv와 별도로 Anaconda에서는 “Conda Environment”을 지원해줍니다. Conda Environment은 virtualenv/venv에 비해 몇 가지 장점이 있습니다.
+
+1. 가상환경을 생성할 때, 원하는 파이썬 버전을 지정할 수 있습니다. 하나의 Anaconda Python만 설치하더라도 파이썬2.7, 3.4, 3.5, 3.6, 3.7, 3.8 등 원하는 버전을 지정하여 가상환경을 생성할 수 있습니다. 여러 버전을 쓰기 위해 다수의 파이썬을 설치할 필요가 없습니다. Virtualenv/venv는 이미 설치된 하나의 파이썬 버전 밖에 못 씁니다.
+2. Anaconda Cloud에서 배포하는 패키지를 설치할 수 있습니다. Pip 명령으로는 pypi에서만 팩키지를 검색/설치할 수 있는 데 pypi에서는 윈도우용 바이너리가 제공되지 않는 경우가 종종 있습니다. 이럴때 팩키지 설치를 위해 Visual Studio를 설치하시는 분도 계신데요. 이때 Anaconda Cloud에는 윈도우용 바이너리가 제공되는 경우가 많습니다. Conda install 명령으로 손쉽게 설치할 수 있습니다. Anaconda Environment이 용량이 크기 때문에 대개 서버환경에서는 사용하지 않습니다만, 개발환경에서는 개발 편의성이 높기 때문에 추천드립니다.
+   다음과 같이 가상환경을 활용할 수 있습니다. 가상환경은 프로젝트마다 프로젝트명을 따라서 하나씩 만드는 것을 추천합니다. 그렇게 해야만 헷갈리지않고 라이브러리 충돌없이 운영할 수 있습니다.
+
+```bash
+# 가상환경 생성 : 원하는 파이썬 버전을 지정. 뒤에 이어 디폴트 설치할 팩키지들을 나열 지원
+conda create --name 가상환경명 python=3.8
+
+# 가상환경 활성화 (터미널마다 수행이 필요)
+conda activate 가상환경명
+
+# 가상환경 빠져나오기 (터미널마다 수행이 필요)
+conda deactivate
+```
+
+파워쉘에서는 Conda Environment이 활성화가 동작하지 않고, 명령프롬프트에서만 동작할텐데요. 파워쉘에서 다음 명령을 입력하시면 사용하실 수 있습니다.
+conda init powershell
+
+---
+
+## 파이썬 패키지 설치
+
+주로 2가지 명령을 통해 필요한 파이썬 패키지를 설치하게 됩니다.
+
+1. pip install : 파이썬 공식 팩키지 저장소인 pypi에서 팩키지를 검색/설치합니다. 개발환경에서 Conda Environment을 쓰고 계시다면, Conda 팩키지가 있다면 이를 설치하시고 없다면 pypi에서 검색/설치하시는 것을 추천드립니다.
+2. conda install : Anaconda Cloud에서 팩키지를 검색/설치합니다. 개발용으로만 쓰시기를 권장드립니다.
+
+---
+
+## Nexus3 사설저장소 설정
+
+C:\Users\사용자아이디 디렉토리에 pip 폴더를 만드시고, pip.ini 파일을 아래와 같이 생성해주세요. 지정하실 때 필히 Nexus3 사설저장소 서버의 주소/포트를 확인하고 입력해주세요.
+
+```python
+[global]
+index = http://NEXUS3사설저장소주소:8081/repository/pypi-group/pypi
+index-url = http:// NEXUS3사설저장소주소:8081/repository/pypi-group/simple
+trusted-host = NEXUS3사설저장소주소
+```

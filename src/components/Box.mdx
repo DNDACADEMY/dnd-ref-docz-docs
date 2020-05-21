@@ -1,0 +1,31 @@
+---
+name: Box
+menu: Components
+---
+
+import { useState } from "react";
+import { Playground, Props } from "docz";
+import { Box } from "./Box";
+
+# Box
+
+## Properties
+
+<Props of={Box} />
+
+## Basic usage
+
+<Playground>
+  <Box>Some message</Box>
+</Playground>
+
+<Playground>
+  {() => {
+    const [counter, setCounter] = useState(0);
+    return (
+      <>
+        <Box title={`clicked ${counter}`} onClick={() => setCounter(prev => prev + 1)} />
+      </>
+    )
+  }}
+</Playground>

@@ -1,0 +1,57 @@
+---
+name: React
+menu: Development
+route: /development/react
+---
+
+## React 개발
+
+먼저 저장소로부터 프로젝트 소스코드를 받습니다.
+
+### Django와 공통되는 부분
+
+```bash
+shell> git clone 저장소.git
+```
+
+### 모듈 설치
+
+**_package.json_** 파일이 존재하는 위치에서 아래 명령을 실행하여 개발에 필요한 모듈을 설치합니다.
+
+```bash
+shell> yarn
+```
+
+### 환경변수 설정
+
+Root 경로에 **_.env_** 파일을 생성하여 필요한 환경변수를 셋팅합니다.
+
+```yaml
+REACT_APP_API_HOST=http://localhost:8000
+```
+
+---
+
+## 기본 명령어
+
+### 로컬 서버 구동
+
+```bash
+shell> yarn start
+```
+
+### Build
+
+```bash
+shell> yarn build
+```
+
+---
+
+## 절대 yarn eject를 하지 않습니다.
+
+CRA에서는 webpack을 비롯한 여러 설정들이 숨겨져있습니다. 이러한 설정들을 재정의하기 위해 yarn eject 명령으로 숨겨진 webpack 설정들을 끄집어내어 커스텀하고 싶은 유혹에 빠질 수 있습니다. Eject를 하게 되면 더 이상 CRA 애플리케이션이 아니게 되며, 설정을 최소화하고 애플리케이션에 집중할 수 있는 CRA의 장점이 사라지게 됩니다. 한 번 Eject를 하게되면 이전 상태로 돌아갈 수 없습니다.
+
+1. CRA의 모든 Configuration을 직접 유지보수해야 합니다 (webpack/babel/eslint 등).
+2. One build dependency의 장점을 잃어버리게 됩니다. 하나의 팩키지가 추가/업데이트/삭제할때마다 항상 다른 팩키지들과의 의존성을 신경써야 합니다.
+   커스텀 설정이 필요하다면, customize-cra와 react-app-rewired 팩키지를 사용하여 재정의해주세요. 하지만 이 두 팩키지를 쓰더라도 CRA가 가지는 안정성을 절대적으로 보장해주는 것은 아니기에 조심스럽게 사용해주세요

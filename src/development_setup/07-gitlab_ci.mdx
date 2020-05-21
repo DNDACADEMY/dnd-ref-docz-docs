@@ -1,0 +1,205 @@
+---
+name: GitLab-CI
+menu: Development Setup
+route: /development-setup/gitlab-ci
+---
+
+## k3s Install
+
+[Using a K3s Kubernetes Cluster For Your GitLab Project](https://medium.com/better-programming/using-a-k3s-kubernetes-cluster-for-your-gitlab-project-b0b035c291a9)
+
+```bash
+sudo apt-get update
+
+curl -sfL https://get.k3s.io | sh -
+
+sudo systemctl status k3s
+```
+
+Kubernetes를 제어할 수 있는 CLI인 kubectl을 이용해, 클러스터가 정상적으로 생성된 것도 확인할 수 있습니다.
+
+API 서버 Endpoint : 6443 포트 (포트 개방이 필요)
+
+```bash
+# Node 상태 확인
+sudo kubectl get node
+
+# Kubernetes 시스템 Pod 상태 확인
+sudo kubectl get pod --namespace=kube-system
+```
+
+### 1-1. Cluster CA 인증서 확인하기
+
+```bash
+sudo kubectl config view --raw \
+	-o=jsonpath='{.clusters[0].cluster.certificate-authority-data}' \
+	| base64 --decode
+
+# -----BEGIN CERTIFICATE-----
+# MIIBVjCB/qADAgECAgEAMAoGCCqGSM49BAMCMCMxITAfBgNVBAMMGGszcy1zZXJ2
+# ZXItY2FAMTU4MzMxODkwMzAeFw0yMDAzMDQxMDQ4MjNaFw0zMDAzMDIxMDQ4MjNa
+# MCMxITAfBgNVBAMMGGszcy1zZXJ2ZXItY2FAMTU4MzMxODkwMzBZMBMGByqGSM49
+# AgEGCCqGSM49AwEHA0IABNxttMHN5xCkIN17y9wNd60yjUgiSWdCXK3lHkC/XTMe
+# BQwuahyp+zsT53tCWf55pq/RPgf+9gavNzWQrm2fj/ejIzAhMA4GA1UdDwEB/wQE
+# AwICpDAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMCA0cAMEQCIGVeytYfEI2s
+# i8BXDFXhUr9K+6l92GllyCnqeumG+Q2hAiB9HDeMVyDwnDH5iJVsI16uLDQql3Jl
+# kP6jPn1gdbZjBA==
+# -----END CERTIFICATE-----
+
+```
+
+### 1-2. Service token
+
+The process to get an identification token involves several steps. We first need to create a `ServiceAccount` and provide it with the `cluster-admin` role. This can be done with the following command:
+
+```bash
+# root 권한으로 실행
+# sudo passwd root 명령으로 root 패스워드 설정, su -로 root로 전환됨.
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitlab-admin
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: gitlab-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: gitlab-admin
+  namespace: kube-system
+EOF
+```
+
+Once the service account is created, we retrieve the resource of type secret that is associated:
+
+```bash
+SECRET=$(kubectl -n kube-system get secret | grep gitlab-admin | awk '{print $1}')
+echo $SECRET
+# gitlab-admin-token-fsxz4
+
+# The next step is to extract the JWT token associated with the secret:
+TOKEN=$(kubectl -n kube-system get secret $SECRET -o jsonpath='{.data.token}' | base64 --decode)
+echo $TOKEN
+# eyJhbGciOiJSUzI1NiIsImtpZCI6IkdNbmhFVS0ybGRKQVR6WDBjeW1rMERGNnVKREhTcU1WSzFBbVBMeDJpbFEifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJnaXRsYWItYWRtaW4tdG9rZW4tZnN4ejQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZ2l0bGFiLWFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNTFjMDE3ZmQtZWUyOC00MGQ0LWExZDUtMzNhNjUwZDkxNjU5Iiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50Omt1YmUtc3lzdGVtOmdpdGxhYi1hZG1pbiJ9.ntQ_27Hw1ZmJZgDVUeCXm_IFDZ4z4NJQTLMjrjncLXwSYuevGbceB3vwDZPhwem99JANowBDSq3WPO3kNAHiErO4jDE1Wq0lCufQZr59rBopllfhynhp_-AhwDSfXRcn3EbTdQV5XwM89whG9-zIlEv5k5z29HVis4BD3M7m0dMmtlziqoZ2jLujbrhIVtGiCxr_agDHrN-tIBpeEE_MGcAsSr86Kh3_d3XQpni7PmMQm3bKpEc9MrhH9zRxV195NHi3wFhf5Kf7NNl6x3p0-P0kf7ZOsBhnSyPwkUGzH32dMFJFG8XsMRSMsk8wUJLje3VbfU6DxQt1tQKJx_oLUA
+```
+
+---
+
+## GitLab - k3s 연동
+
+### 2-1. Auto DevOps (디폴트 활성화)
+
+[Index · Autodevops · Topics · Help](https://gitlab-isp.pnu.askcompany.kr/help/topics/autodevops/index.md)
+
+`.gitlab-ci.yml`이 있는 상태로 새로운 푸시가 들어오면 일련의 파이프라인(Job 묶음)이 실행됩니다. 각 Job은 개발자의 선택에 달렸지만 보통은 아래와 같습니다.
+
+- 테스트: 유닛 테스트, 통합 테스트, E2E 테스트, 테스트 커버리지 측정
+- 린트: 코드 퀄리티 측정, 코드 컨벤션 점검
+- 빌드: 빌드, 번들링, Dockerfile 빌드 및 컨테이너 레지스트리 푸시
+- 배포: Helm Chart, KNative Functions, KNative App(컨테이너) 배포
+
+`Admin Area - Kubernetes`로 이동하여 `Add Kubernetes cluster`버튼을 클릭해 k3s를 추가합니다.
+
+![assets/07-gitlab_ci/01.png](assets/07-gitlab_ci/01.png)
+
+- cluster name : Kubernetes cluster의 이름을 설정합니다.
+
+- API URL : 구축한 k3s 서버의 호스트를 써줍니다. 이 때 반드시 앞에 https://를 붙여야하고 끝에 설정된 포트를 써줘야합니다. (k3s 서버에 https 인증서가 없어도, API URL에는 https로 입력해주셔야 k3s에서 요청을 받아들입니다.)
+
+- CA Certificate : k3s를 구축하며 생성했던 Key를 넣어줍니다.
+
+- Service Token : k3s를 구축하며 생성했던 Token을 넣어줍니다.
+
+![assets/07-gitlab_ci/02.png](assets/07-gitlab_ci/02.png)
+
+- Helm Tiller : Kubernetes의 패키지 관리 툴입니다. Kubernetes의 여러 기능을 이용하기 위해 설치해줘야 합니다.
+
+- GitLab Runner : .gitlab-ci.yml에 작성한 작업을 수행하고 GitLab에 그에 대한 결과를 피드백 해줍니다. GitLab CI를 사용하기 위해 설치해줍니다.
+
+![assets/07-gitlab_ci/03.png](assets/07-gitlab_ci/03.png)
+
+---
+
+## GitLab-Runner Install
+
+### Overview
+
+![assets/07-gitlab_ci/06.png](assets/07-gitlab_ci/06.png)
+
+GitLab CI는 8.x부터 GitLab과 통합되어 나오기 시작했으며, 프로젝트 디렉토리의 루트 경로에 .gitlab-ci.yml 파일을 추가하는 것으로 활성화됩니다.
+
+GitLab Runner는 GitLab CI에서 명세한 작업을 수행하고 그 결과를 GitLab으로 피드백합니다. GitLab Runner는 직접 구동하여 GitLab에 붙이는 방식이며, k3s (Container Orchestration 툴의 한 종류, Kubernetes의 최소 버전)와 연동하면 GitLab에서 k3s를 통해 Runner를 자동 생성 구동합니다.
+
+### 직접 GitLab Runner를 구동할 경우
+
+GitLab CI를 통한 GitLab Runner 수행에서 도커 이미지를 빌드해야 하는 상황이 발생하게 됩니다. K3s에서는 Docker Container형태로 Runner가 구동이 되는 데, Docker Container 내에서 도커 이미지를 빌드할 수 없습니다. 빌드를 할려면 provileged 옵션으로 구동을 해서, 컨테이너가 호스트의 리눅스 커널 기능을 모두 사용할 수 있도록 해주어야 합니다. 이를 Docker in Docker 기능이라고 합니다. 실험적인 기능이기 때문에 아직 사용하지 않는 것이 좋습니다. 그래서 Docker 이미지 빌드를 위해 직접 GitLab Runner를 구동하는 방식을 사용합니다.
+
+GitLab Runner설치를 위한 머신에서 GitLab 공식 레포지토리를 추가하고 **_gitlab-runner_** 최신 버젼을 설치합니다.
+
+```bash
+# Debian/Ubuntu/Mint인 경우
+curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+
+# RHEL/CentOS/Fedora인 경우
+curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh | sudo bash
+```
+
+```bash
+# Debian/Ubuntu/Mint인 경우
+sudo apt-get install gitlab-runner
+
+# RHEL/CentOS/Fedora인 경우
+sudo yum install gitlab-runner
+```
+
+**_gitlab-runner_**의 특정 버젼을 설치할 때의 명령입니다.
+
+```bash
+# for DEB based systems
+apt-cache madison gitlab-runner
+sudo apt-get install gitlab-runner=10.0.0
+
+# for RPM based systems
+yum list gitlab-runner --showduplicates | sort -r
+sudo yum install gitlab-runner-10.0.0-1
+```
+
+**_GitLab Runner_**를 설치했으므로 Runners에 대한 셋팅이 필요합니다.
+
+해당 프로젝트의 `Settings - CI/CD`로 이동하여 `Runners`의 Expand를 클릭하여 화면을 확장합니다.
+
+![assets/07-gitlab_ci/04.png](assets/07-gitlab_ci/04.png)
+
+![assets/07-gitlab_ci/05.png](assets/07-gitlab_ci/05.png)
+
+위 이미지를 참고하여 아래의 명령을 완성하여 `gitlab-runner register`를 생성합니다.
+
+```bash
+# root 권한에서 실행
+sudo gitlab-runner register -n \
+    --url https://gitlab.com/ \ # 위 화면의 호스트를 넣어줍니다.
+    --registration-token REGISTRATION_TOKEN \ # 위 화면의 Token을 넣어줍니다.
+    --executor shell \ # 실행환경을 shell환경으로 하겠다.
+    --description "My Runner"
+
+# register 삭제 명령
+gitlab-runner unregister --url http://gitlab.com --token GITLAB_RUNNER_TOKEN
+
+sudo usermod -aG docker gitlab-runner # gitlab-runner유저에 docker sudo 권한 부여.
+# 권한을 부여하지 않으면 GitLab CI에서 권한이 없어서 docker 명령이 실행되지 않음.
+```
+
+Runners를 확장하고 나온 호스트 주소와 Token을 아래 명령에 넣고 실행합니다..
+
+아래 명령 실행 후 `Shared Runners`에서 Enable shared Runners 버튼을 클릭하여 활성화 합니다..
+
+(Shared Runners는 현재 연동되어있는 k3s의 기본 GitLab Runner를 공유하는 것입니다.)
+
+- `Issue` : 기본 Runner를 공유할시 docker in docker가 동작하지 않습니다. gitlab-ci 환경에서 docker 명령을 사용해야할때는 추가되는 gijtlab-runner register에 태그를 지정해주고, **_tags_**로 작업을 컨트롤 해줘야합니다.

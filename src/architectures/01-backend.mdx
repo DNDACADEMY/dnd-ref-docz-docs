@@ -1,0 +1,216 @@
+---
+name: Backend
+menu: Architectures
+route: /architectures/backend
+---
+
+# Django
+
+---
+
+## Overview
+
+하나의 웹서비스를 구축 시에 수많은 API를 개발하게 됩니다. 매 API Endpoint마다 인증/권한/버전처리/응답생성 등을 구현하게 됩니다. 이는 개발 중복이며 프로젝트의 복잡도를 높입니다. 장고 웹프레임워크와 django-rest-framework 라이브러리를 통해 중복을 최소화하고 관리성 높은 API 서비스 개발을 할 수 있습니다.
+
+---
+
+## 장고 주요 기능들
+
+장고(Django)는 2008년에 1.0버전이 출시된 이래로 꾸준히 개발되어 2020년 현재 3.0버전이 릴리즈되었습니다. 장고의 최대 강점은 중복개발을 최대한 줄이고 서비스 비즈니스 로직을 가독성 높은 언어인 파이썬으로 최소한의 코드로 개발할 수 있다는 것입니다. 그 중심에 “장고 모델”이 있습니다.
+그리고, 장고 개발은 파이썬을 잘 하는 만큼 더 잘 할 수 있게 됩니다. 꾸준한 파이썬 학습이 필요합니다.
+
+### 1. 장고 모델 (ORM)
+
+데이터베이스에 CRUD 등의 작업을 위해 매번 DB Connection을 맺고 SQL 문자열을 조합하고 직접 SQL 수행하고 결과를 파싱하는 것은 너무 번거로운 작업입니다.
+
+개발자는 SQL을 잘 이해해야합니다. 그래야만 성능 좋은 애플리케이션을 개발할 수 있습니다. 그렇다고 해서 그 SQL을 개발자가 직접 작성할 필요는 없습니다.
+
+ORM을 사용하면 최소한의 가독성 높은 파이썬 코드로 대개의 경우를 만족하는 SQL을 생성하고, 보다 효율적으로 수행하고, 비즈니스 로직에 집중할 수 있게 됩니다.
+
+ORM은 마법이 아니며, DB연결과 효율적인 SQL생성 및 수행을 도와주는 라이브러리입니다.
+
+SQL로 수행하던 작업을 ORM으로 100% 동일하게 수행할 수 있는 것은 아닙니다. ORM은 ORM만의 스타일이 있습니다. ORM 스타일로 보다 확장성있게 다양한 문제를 해결할 수 있습니다.
+
+그리고 ORM을 쓴다고 해서 Raw SQL 사용이 불가능한 것은 아닙니다. 경우에 따라 선택적으로 Raw SQL을 사용해볼 수는 있겠습니다.
+견고한 모델을 작성했다면, Web API 개발은 50%가 끝났다. 라는 말이 있을 정도로 장고 모델은 장고 애플리케이션의 핵심입니다. 우리는 장고 모델을 작성하는 데에 최대한 공을 들여야 합니다.
+
+장고 모델을 통해 “장고 ModelForm”, “DRF ModelSerializer”, “장고 Admin” 등의 로직을 자동으로 생성하고, 가독성 높은 코드로 중복없이 Web API를 개발할 수 있습니다.
+
+모델에 최대한 데이터 명세 의도를 최대한 표현해야 합니다. Model에 명세하기 어려운 부분이 있다면, ModelSerializer와 공조해서 처리할 수 있습니다.
+
+다음은 모델 설계 시에 지켜야할 최소한의 규칙입니다.
+
+1. 각 DB 테이블은 id 이름의 단일 Primary Key를 가집니다. 복수 컬럼에 대한 유일성 보장이 필요하다면, 모델에 “멀티 컬럼에 대한 unique_together” 명세를 해주세요. id 컬럼을 모델에 정의할 필요가 없습니다. 모델에 primary_key 정의가 없다면, 장고에서 내부적으로 id 컬럼을 생성합니다.
+
+2. 각 DB 테이블 간의 관계를 Relation Field로 최대한 표현해주세요. ForeignKey, OneToOneField, ManyToManyField가 있습니다.
+
+3. 각 필드 타입을 무의미하게 문자열 필드로 러프하게 지정하지 마세요. 의미있게 필드타입 (IntegerField, EmailField, URLField 등) 을 지정해주세요. 엑셀 처리를 많이 한다면 ExcelField와 같은 커스텀 필드를 만들어주세요.
+
+4. 각 필드에 무의미하게 blank=True, null=True 지정은 하지 마세요. 필수 필드는 필수 필드로서 처리해야만 합니다.
+
+5. 각 필드마다 유효성 검사 로직을 최대한 타이트하게 지정해주세요. 모델에 정의된 필드내역과 유효성 검사 로직은 Django ModelForm과 DRF ModelSerializer에 의해서 자동으로 읽혀지고 활용이 됩니다.
+
+### 2. 데이터베이스 마이그레이션
+
+우리는 데이터베이스 의존적인 소프트웨어를 개발합니다. 프로젝트 소스코드에 대해 버전관리를 하듯이 데이터베이스 스키마에 대해서도 버전관리가 필요합니다. 시스템에서 가장 중요한 데이터베이스 스키마를 버전관리하지 않는다는 것은 있을 수 없는 일입니다. 버전관리해야만 서비스를 안정성있게 관리할 수 있게 되며, 유지 보수성이 높아지게 됩니다.
+Java Spring에서는 Flyway라는 오픈소스 마이그레이션 툴을 사용합니다. 장고에서는 Migrations 이름의 기능을 제공해줍니다. 설계한 데이터베이스 스키마를 “장고 모델”로 표현하면, 그에 맞춰 Migration 파일이 적절하게 잘 생성이 됩니다. 생성된 Migration 파일을 버전관리하시면 됩니다.
+
+---
+
+## django-rest-framework 주요 기능들
+
+django기본에서는 “웹 Form”을 핵심으로한 백엔드 개발에 필요한 거의 모든 기능을 제공해줍니다. “웹 API” 개발을 위한 부분은 django-rest-framework 라이브러리가 채워줍니다.
+
+### 1. DRF ModelSerializer
+
+DRF의 ModelSerializer는 다음 2가지 기능을 제공해줍니다.
+
+1. 웹 API 입력값에 대한 유효성 검사 및 DB로의 데이터 저장
+2. QuerySet을 활용하여, DB 쿼리 및 JSON 포맷으로의 직렬화
+   모델만 잘 정의되어있다면, 위 2개의 작업은 구현이 아닌 세팅 만으로 간결하게 처리할 수 있습니다.
+
+```python
+class EmployeeSerializer(ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ["name", "age"]
+```
+
+---
+
+### 2. DRF ViewSet
+
+장고에서는 View 함수를 통해 HTTP 요청을 처리합니다. 하나의 REST 리소스에 대해서 최소 CRUD를 지원할려면, 최소 2개의 URL이 필요하며, 5개의 루틴이 필요합니다.
+
+1. 목록 조회 요청 (LIST) : /api/employee/ 주소에 GET 요청
+2. 생성 요청 (CREATE) : /api/employee/ 주소에 POST 요청
+3. 조회 요청 (RETRIEVE) : /api/employee/pk/ 주소에 GET 요청
+4. 수정 요청 (UPDATE) : /api/employee/pk/ 주소에 PATCH 요청
+5. 삭제 요청 (DELETE) : /api/employee/ 주소에 DELETE 요청
+   여러 Endpoint를 구현하다보면 각각의 API들을 구현함에 있어서, 모델을 제외한 거의 모든 로직이 유사하게 구현됨을 알 수 있습니다. 유사한 로직도 중복된 코드가 됩니다. 이러한 중복된 View구현을 DRF Viewset에 Serializer와 QuerySet지정만으로 구현할 수 있습니다.
+
+```python
+# Model/Serializer가 잘 구현되어있다면, 실제 View 구현은 본 3줄 만으로 끝날 수 있습니다.
+class EmployeeViewSet(ModelViewSet):
+    serializer_class = EmployeeSerializer
+    queryset = Employee.objects.all()
+```
+
+### 3, 인증(Authentication) 및 Json Web Token
+
+장고 기본에서는 인증에 필요한 핵심 기능을 django.contrib.auth 앱을 통해 제공하고 있습니다. 장고에서 어떤 인증을 쓰든지간에 이 앱을 활용하게 됩니다. 일반적으로 API에서는 JWT 인증을 사용합니다. django.contrib.auth 앱에서는 JWT인증을 제공하지는 않지만 djangorestframework-jwt 라이브러리를 통해 손쉽게 JWT 인증 기능을 추가할 수 있습니다.
+인증 적용에 있어서 각 Web API 별로 인증을 체크할 코드를 추가하는 것이 아니라, 장고 프로젝트 설정 상에 적용할 인증 방법을 기술하면, 프로젝트 전역으로 동일한 인증방법이 적용됩니다. 물론 API Endpoint 별로 다른 인증을 세팅할 수도 있습니다. 구현이 아니라, 세팅입니다.
+
+### 4. API 구현에 필요한 핵심 DRF 기능들
+
+위에서 살펴본 기능 외에도 권한 체크, 다양한 포맷의 응답 생성 (JSON, PDF, Excel 등) 등의 기능을 DRF에서 지원해주고 있습니다.
+
+---
+
+## 프레임워크 핵심 모듈
+
+### 1. SimpleGridSerializer
+
+웹 프론트엔드의 Grid/Form 컴포넌트에서 사용할 메타정보를 테이블명/필드명 지정만으로 자동 생성해냅니다. 이는 ModelViewSetWithColumns를 통해 호출되어 생성이 되며, 리액트 단의 SimpleFormContainer / SimpleGridContainer 컴포넌트에서 읽어가고 이 정보를 기반으로 Grid/Form 처리를 자동화합니다.
+
+```python
+# 공통의 SimpleGridSerializer를 상속받습니다.
+# 본 Serializer를 통해 생성된 Meta데이터는 리액트의 SimpleFormContainer컴포넌트와
+# SimpleGridContainer 컴포넌트에 의해서 활용이 됩니다.
+# 이는 구현 보다는 설정에 가깝습니다.
+class EmployeeDetailSerializer(SimpleGridSerializer):
+    class Meta:
+        # 모델과 필드명 지정만으로, 기본적인 설정이 끝납니다.
+        model = Employee
+        fields = [
+            "id",
+            "uid",
+            "name",
+            "name_cn",
+            "name_en",
+            "email",
+            "sex",
+            "work_status",
+            "url",
+        ]
+        # SimpleFormContainer 컴포넌트 내에서 Form Field 배치를
+        # 표준 Grid CSS로 지정할 수 있습니다.
+        form_layout = {
+            "root": {
+                "styles": """
+                    width: 600px;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                """,
+                "areas": [
+                    ["uid", "uid", "work_status"],
+                    ["tabgroup-1", "tabgroup-1", "tabgroup-1"],
+                ],
+            },
+            "tabgroup-1": [
+                {
+                    "label": "이름",
+                    "styles": """
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+          """,
+                    "areas": [
+                        ["name", "name_cn", "name_en"],
+                        ["sex", "email", "email"],
+                    ],
+                },
+            ],
+        }
+```
+
+모델에 모델 필드에 대한 FieldType, Table Relation, Field Validators들을 모두 지정이 되어있으며, 이는 Grid/Form 처리를 위한 필요조건입니다. SimpleGridSerializer를 통한 처리에서는 필드 이름을 지정해주는 것만으로 List/Create/Update/Retrieve 처리를 주요 로직들을 모두 처리할 수 있게 됩니다.
+
+form_layout 속성을 통해, 관련 SimpleFormContainer 컴포넌트 내에서의 컬럼 배치 및 Tab 레이아웃 처리를 필드 이름 지정만으로 처리할 수 있습니다. 웹 표준 CSS인 Grid를 최대한 활용하여 단순하지만 강력한 Grid 레이아웃을 표현할 수 있습니다.
+
+#### 2. ModelViewSetWithColumns
+
+SimpleGridSerializer에서 생성한 메타정보를 리액트 단에서 사용할 수 있도록 Web API 인터페이스를 자동으로 생성합니다. 이 인터페이스를 ViewSet이라 부릅니다. SQL JOIN, 정렬, 필터링 등의 처리는 필드명 지정만으로 자동화되어 처리됩니다.
+
+```python
+# 공통의 ModelViewSetWithColumns를 상속받습니다.
+# 한 REST 리소스에 대한 CRUD 등의 요청 처리를 본 클래스 하나 안에서 모두 처리됩니다.
+# 이는 구현 보다는 설정에 가깝습니다.
+class EmployeeViewSet(ModelViewSetWithColumns):
+# 본 API 동작에 필요한 기본 QuerySet을 정의합니다.
+# JOIN 등의 처리가 필요하다면 select_related/prefetch_related를 통해 명세합니다.
+    queryset = Employee.objects.all().prefetch_related("user", "organization")
+
+# List 조회 요청을 위한 Rule을 list_serializer_class를 통해 지정할 수 있습니다.
+# 생략한다면 serializer_class가 사용됩니다.
+    list_serializer_class = EmployeeListSerializer
+    serializer_class = EmployeeDetailSerializer
+
+# 정렬을 지원할 필드를 명세합니다.
+# 이 정보는 리액트의 Grid 컴포넌트에서도 활용됩니다.
+    ordering_fields = ["uid", "name"]
+
+# Grid 컴포넌트에서 조회 조건에 사용될 정보를 지정합니다.
+# 이 정보는 리액트의 Grid 컴포넌트에서도 활용됩니다.
+    filterset_class = EmployeeFilter
+
+조회 요청 시의 Query String 인자를 통한 데이터베이스 필터링은 django-filter 라이브러리를 통해 최소한의 코드로 일관된 인터페이스로 처리할 수 있습니다.
+class EmployeeFilter(BaseFilterSet):
+    class Meta:
+        model = Employee
+        fields = ["sex", "work_status", "rank", "degree", "study_field"]
+        query_fields = ["name", "email"]
+```
+
+ModelViewSetWithColumns를 상속한 것만으로 주요 로직을 구현할 수 있습니다.
+
+List/Retrieve를 위한 기본 SQL 쿼리를 장고 ORM으로 심플하게 지정할 수 있으며, List와 Retrieve/Create/Update 처리를 분리하여 서로 다른 Serializer를 지정할 수 있습니다.
+
+정렬을 지원할 필드는 필드이름만 지정하면 SimpleGridContainer를 통해 정렬 UI가 자동 제공되며, 데이터베이스에서도 ORDER BY 컬럼이 오름차순/내림차순 자동 지정됩니다.
+
+검색옵션은 filterset_class 지정을 통해 지원할 수 있습니다.
+
+BaseFilterSet을 상속받은 Filter 클래스에서 fields 속성으로 검색을 지원할 필드명을 지정할 수 있습니다.
+
+이 필드들이 공통코드를 지정한 필드일 경우 "필터" 옵션으로서 동작하게 됩니다.
+
+query_fields에 필드명을 지정할 경우, 범용 검색 시에 OR/LIKE 조건으로서 동작합니다.

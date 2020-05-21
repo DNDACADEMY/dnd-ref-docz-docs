@@ -1,0 +1,48 @@
+---
+name: React
+menu: Development Setup
+route: /development-setup/react
+---
+
+## Window에서의 NodeJS
+
+명령프롬프트나 파워쉘에서 다음 명령을 통해 설치할 수 있습니다.
+
+```bash
+choco install -y nodejs
+```
+
+nodejs에서는 패키지 설치 시에 기본 동작이 각 프로젝트 경로에 라이브러리가 설치되므로, 가상환경 시스템이 필요없습니다. 설치 후에 node 명령을 확인해주세요.
+
+```bash
+Shell> node --version
+v12.16.1
+```
+
+---
+
+## Nexus3 사설저장소 설정
+
+Nexus3 상의 npm 저장소 URL을 참고하여 아래 명령으로 설정해주세요.
+
+```bash
+npm config set --global registry http://NEXUS3사설저장소주소:8081/repository/npm-group/
+```
+
+---
+
+## npm install 관련 이슈
+
+캐시 파일의 lock 파일 내용 혹은 권한 상의 오류가 있어서 설치가 제대로 진행되지 않을 수 있습니다. VDI 머신의 “PC 실시간 감시”를 꺼주시고 아래 명령을 통해 설치를 진행해주세요. 이는 백신에서 파일변경을 막고 있기 때문일 수 있습니다.
+
+---
+
+## node-sass 설치 오류가 발생한다면?
+
+```bash
+# node-sass 설치에 파이썬3를 지원하는 버전의 node-gyp 팩키지가 필요합니다.
+set HTTP_PROXY=http://192.168.5.203:3128
+npm install node-gyp
+
+npm install --no-optional
+```
